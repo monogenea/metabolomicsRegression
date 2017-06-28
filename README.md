@@ -1,4 +1,4 @@
-# metabolomicsRegression
+# Regression tutorial for metabolomics data
 
 This tutorial will use the data from de Abreu e Lima et al. (2017) to predict hybrid biomass (FW) in the field using the metabolic profiles of primary roots from the hybrid seedlings (http://onlinelibrary.wiley.com/doi/10.1111/tpj.13495/full).
 
