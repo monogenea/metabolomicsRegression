@@ -4,7 +4,7 @@ This tutorial will use the data from de Abreu e Lima et al. (2017) to predict hy
 
 It will cover pre-processing, cross-validation and importance analysis using OLS, PLS, LASSO, ridge, elastic net, SVM and random forests.
 
-No. hybrids - 362
-No. metabolites - 165
+- *n* hybrids = 362
+- *n* metabolites = 165
 
 Note that the biomass data set also includes dry weight (DW) which I do not use, but you can try yourself.
