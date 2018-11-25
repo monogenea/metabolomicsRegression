@@ -1,12 +1,15 @@
 
 
 #### PREDICT BIOMASS IN MAIZE HYBRIDS USING THEIR METABOLIC PROFILES ####
+# UPDATED - Sun Nov 25 13:04:35 2018 ------------------------------
 
 
 ### Load biomass and root metabolic data set described in de Abreu e Lima et al. (2017)
 
 library(caret)
 library(pheatmap)
+library(doMC)
+
 data <- read.delim("rootdata.txt", row.names = 1) # metabolic data set
 biomass <- read.delim("biomass.txt", row.names = 1) # biomass data set; also contains Dry Weight
 
@@ -37,6 +40,9 @@ myFolds <- createMultiFolds(biomass$FW, k = 5, times = 10)
 # Define control parameters, apply "oneSE" rule
 myControl <- trainControl(method = "repeatedcv", index = myFolds, selectionFunction = "oneSE")
 
+# Parallelise
+registerDoMC(6)
+
 # Fit OLS
 mod1 <- train(x = predictors, y = biomass$FW,
               method = "lm",
@@ -61,7 +67,7 @@ mod3 <- train(x = predictors, y = biomass$FW,
               tuneGrid = data.frame(.fraction = seq(.01,.5,length=10)),
               metric = "Rsquared",
               trControl = myControl)
-plot(mod3) # optimal fraction = 0.17
+plot(mod3) # optimal fraction = 0.119
 
 # Fit ridge
 
@@ -71,7 +77,7 @@ mod4 <- train(x = predictors, y = biomass$FW,
               tuneGrid = data.frame(.lambda = seq(.1,.6,length=10)),
               metric = "Rsquared",
               trControl = myControl)
-plot(mod4) # optimal lambda = 0.27
+plot(mod4) # optimal lambda = 0.6
 
 # Fit ENET
 
@@ -82,7 +88,7 @@ mod5 <- train(x = predictors, y = biomass$FW,
                                     .fraction = c(0.01, 0.1, 0.2)),
               metric = "Rsquared",
               trControl = myControl)
-plot(mod5) # optimal parameters lambda = 0 and fraction = 0.2, suggesting LASSO is more important 
+plot(mod5) # optimal parameters lambda = 0 and fraction = 0.1, suggesting LASSO is more important 
 
 # Fit SVR
 
@@ -98,8 +104,10 @@ plot(mod6) # optimal C = 2
 
 mod7 <- train(x = predictors, y = biomass$FW,
               method = "ranger",
-              # 2 tuning pars; we let the kernel sigma to be determined by a default method
-              tuneGrid = data.frame(mtry = seq(5, (2/3)*ncol(predictors), length = 10)),
+              tuneGrid = expand.grid(mtry = seq(5, (2/3)*ncol(predictors), length = 6),
+                                    splitrule = "variance",
+                                    min.node.size = 5),
+              num.trees = 1000,
               metric = "Rsquared",
               trControl = myControl)
 plot(mod7) # 
@@ -118,8 +126,11 @@ allModels <- resamples(list("OLS" = mod1,
 bwplot(allModels, metric = "Rsquared")
 
 # As expected, the OLS is overfitting in all folds, failing to generalize to the others
-# The LASSO seems to perform the best, with R2 = 0.40 (as seen above, ENET also relies more in the LASSO penalty)
+# The LASSO seems to perform the best, with R2 ~ 0.40 (as seen above, ENET also relies more on the LASSO penalty)
 
 ### Investigate variable importance (ViP) in the LASSO
 
 plot(varImp(mod3),20) # Top 20 metabolites
+
+# Write session out
+writeLines(capture.output(sessionInfo()), "sessionInfo")
